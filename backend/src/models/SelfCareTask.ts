@@ -1,9 +1,9 @@
 import { Schema, model } from 'mongoose';
-import { selfCareTask } from '../utils/interfaces.js';
 import validator from 'validator';
+import { ISelfCareTask } from '../types/task.js';
 
 
-const selfCareTaskSchema = new Schema<selfCareTask>({
+const selfCareTaskSchema = new Schema<ISelfCareTask>({
     patientId: {
         type: Number,
         required: true

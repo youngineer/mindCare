@@ -1,14 +1,15 @@
 import { Schema, model } from 'mongoose';
-import { IUser } from '../utils/interfaces.js';
+
 import jwt from "jsonwebtoken";
 import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 import validator from 'validator';
 import { DEFAULT_PHOTO_URL } from '../utils/constants.js';
+import { IUserDocument } from '../types/user.js';
 dotenv.config();
 
 
-const userSchema = new Schema<IUser>({
+const userSchema = new Schema<IUserDocument>({
     name: {
         type: String, 
         required: true,
@@ -75,6 +76,6 @@ userSchema.methods.validatePassword = async function(password: string):Promise<b
     return bcrypt.compare(password, passwordHash);
 };
 
-const User = model('User', userSchema);
+const User = model<IUserDocument>('User', userSchema);
 
 export default User;

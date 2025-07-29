@@ -1,9 +1,9 @@
 import { Schema, model } from 'mongoose';
-import { session } from '../utils/interfaces.js';
 import validator from 'validator';
+import { ISession } from '../types/session.js';
 
 
-const sessionSchema = new Schema<session>({
+const sessionSchema = new Schema<ISession>({
     patientId: {
         type: Number,
         required: true

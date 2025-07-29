@@ -1,10 +1,10 @@
 import { Schema, model } from 'mongoose';
-import { patient } from '../utils/interfaces.js';
 import dotenv from 'dotenv';
 import validator from 'validator';
+import { IPatient } from '../types/user.js';
 dotenv.config();
 
-const patientSchema  = new Schema<patient>({
+const patientSchema  = new Schema<IPatient>({
     dateOfBirth: {
         type: Date,
         required: true,

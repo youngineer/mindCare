@@ -1,11 +1,11 @@
 import { Schema, model } from 'mongoose';
-import { therapist } from '../utils/interfaces.js';
 import dotenv from 'dotenv';
 import validator from 'validator';
+import { ITherapist } from '../types/user.js';
 dotenv.config();
 
 
-const therapistSchema = new Schema<therapist>({
+const therapistSchema = new Schema<ITherapist>({
     specialties: {
         type: [String],
         required: true,

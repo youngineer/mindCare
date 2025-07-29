@@ -1,9 +1,9 @@
 import { Schema, model } from 'mongoose';
-import { mood } from '../utils/interfaces.js';
 import validator from 'validator';
+import { IMood } from '../types/mood.js';
 
 
-const moodSchema = new Schema<mood>({
+const moodSchema = new Schema<IMood>({
     patientId: {
         type: Number,
         required: true

@@ -1,8 +1,7 @@
 import { Schema, model } from 'mongoose';
-import { chatBotLog } from '../utils/interfaces.js';
-import validator from 'validator';
+import { IChatBotLog } from '../types/chatBotLog.js';
 
-const chatBotLogSchema = new Schema<chatBotLog>({
+const chatBotLogSchema = new Schema<IChatBotLog>({
     userId: {
         type: Number,
         required: true,
