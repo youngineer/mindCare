@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 import User from '../models/User.js';
 import { IUserDocument } from '../types/user.js';
 import { IResponseDto } from '../types/dto/responseDto.js';
+import { createResponse } from '../utils/responseUtils.js';
 
 const authRouter: Router = express.Router();
 
@@ -26,10 +27,10 @@ authRouter.post("/auth/signup", async (req: Request, resp: Response): Promise<vo
 
         const response: IResponseDto = {
             message: "User created successfully!",
+            role: savedUser.role,
             content: {
                 name: savedUser.name,
-                emailId: savedUser.emailId,
-                role: savedUser.role
+                emailId: savedUser.emailId
             }
         };
 
@@ -37,6 +38,7 @@ authRouter.post("/auth/signup", async (req: Request, resp: Response): Promise<vo
     } catch (error: any) {
         const response: IResponseDto = {
             message: error.message || "Something went wrong",
+            role: null,
             content: null
         };
         resp.status(500).json(response);
@@ -61,21 +63,14 @@ authRouter.post("/auth/login", async(req: Request, resp: Response) => {
         const token = user.getJWT();
         resp.cookie("token", token);
 
-        const response: IResponseDto = {
-            message: "Login successful!",
-            content: {
-                name: user.name,
-                emailId: user.emailId,
-                role: user.role
-            }
-        };
+        const response = createResponse("Login successful", user.role, {
+            name: user.name,
+            emailId: user.emailId
+        });
 
         resp.status(200).json(response);
     } catch (error: any) {
-        const response: IResponseDto = {
-            message: error.message || "Something went wrong",
-            content: null
-        };
+        const response = createResponse(error.message, null, null);
         resp.status(500).json(response);
     }
 });
