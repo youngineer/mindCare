@@ -1,10 +1,10 @@
 import { Schema, model } from 'mongoose';
-import { Patient } from '../utils/interfaces.js';
+import { patient } from '../utils/interfaces.js';
 import dotenv from 'dotenv';
 import validator from 'validator';
 dotenv.config();
 
-const patientSchema  = new Schema<Patient>({
+const patientSchema  = new Schema<patient>({
     dateOfBirth: {
         type: Date,
         required: true,
@@ -19,7 +19,8 @@ const patientSchema  = new Schema<Patient>({
             values: ["male", "female"],
             message: '{VALUE} is not supported'
         },
-        required: true
+        required: true, 
+        trim: true
     },
     healthConditions: {
         type: [String],
@@ -31,7 +32,8 @@ const patientSchema  = new Schema<Patient>({
             if(!validator.isMobilePhone(value)) {
                 throw new Error("Invalid phone number");
             }
-        }
+        }, 
+        trim: true
     }
 });
 
