@@ -1,8 +1,8 @@
 
 import validator from 'validator';
-import { SignUpDto } from '../types/dto/signUpDto.js';
+import { ISignUpDto } from '../types/dto/authDto.js';
 
-export function validateSignUpRequest(data: SignUpDto) {
+export function validateSignUpRequest(data: ISignUpDto) {
     const { name, emailId, password, role } = data;
 
     if(!validator.isAlpha(name)) {
