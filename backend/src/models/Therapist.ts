@@ -62,8 +62,9 @@ const therapistSchema = new Schema<ITherapist>({
         },
         required: true, 
         trim: true
-    }
-});
+    },
+},
+{ timestamps: true });
 
 
 const Therapist = model('Therapist', therapistSchema);

@@ -25,7 +25,8 @@ const moodSchema = new Schema<IMood>({
         type: [String],
         required: true
     }
-});
+},
+{ timestamps: true });
 
 const MoodEntry = model('MoodEntry', moodSchema);
 

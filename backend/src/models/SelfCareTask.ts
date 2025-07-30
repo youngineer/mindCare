@@ -61,7 +61,8 @@ const selfCareTaskSchema = new Schema<ISelfCareTask>({
         type: Number,
         required: true
     }
-});
+},
+{ timestamps: true });
 
 const SelfCareTask = model('SelfCareTask', selfCareTaskSchema);
 

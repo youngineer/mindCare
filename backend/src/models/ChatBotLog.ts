@@ -20,7 +20,8 @@ const chatBotLogSchema = new Schema<IChatBotLog>({
         required: true,
         trim: true
     }
-});
+},
+{ timestamps: true });
 
 const ChatBotLog = model('ChatBotLog', chatBotLogSchema);
 export default ChatBotLog;

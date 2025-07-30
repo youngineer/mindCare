@@ -66,7 +66,8 @@ const sessionSchema = new Schema<ISession>({
             }
         }
     }
-});
+},
+{ timestamps: true });
 
 
 const Session = model('Session', sessionSchema);

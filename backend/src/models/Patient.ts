@@ -35,7 +35,8 @@ const patientSchema  = new Schema<IPatient>({
         }, 
         trim: true
     }
-});
+},
+{ timestamps: true });
 
 
 const Patient = model('Patient', patientSchema);

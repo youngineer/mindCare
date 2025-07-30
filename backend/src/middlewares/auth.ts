@@ -34,9 +34,7 @@ const userAuth = async (req: AuthenticatedRequest, resp: Response, next: NextFun
         req.user = user;
         next();
     }
-
     
-
   } catch (error: any) {
     const response = createResponse(
       error.message || "Unexpected error during authentication",
