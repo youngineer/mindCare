@@ -5,6 +5,9 @@ import { createResponse } from '../utils/responseUtils.js';
 import User from '../models/User.js';
 import Patient from '../models/Patient.js';
 import Therapist from '../models/Therapist.js';
+import { ITherapistInfoDto, ITherapistRequest } from '../types/dto/therapistDto.js';
+import { Role } from '../types/common.js';
+import { IUser } from '../types/user.js';
 
 
 const patientController = express.Router();
@@ -122,6 +125,54 @@ patientController.get("/patient/therapists", userAuth, async(req: IPatientReques
         console.error('Therapist list fetch error:', error);
         const response = createResponse(
             error.message || "Failed to fetch therapist list", 
+            null, 
+            null
+        );
+        resp.status(500).json(response);
+    }
+});
+
+
+patientController.get("/patient/therapist/:therapistId", userAuth, async(req: ITherapistRequest, resp: Response) => {
+    try {
+        const therapistId = req?.params?.therapistId;
+        const role = req?.user?.role as Role;
+
+        if(role === "therapist") {
+            resp.status(403).json(createResponse("Access denied", role, null));
+            return;
+        }
+
+        const therapist = await Therapist.findOne({ userId: therapistId }).exec();
+        if (!therapist) {
+            resp.status(404).json(createResponse("Therapist does not exist", role, null));
+            return;
+        }
+
+        const therapistUser = await User.findById(therapistId, "name photoUrl emailId contact");
+        if (!therapistUser) {
+            resp.status(404).json(createResponse("Therapist user information not found", role, null));
+            return;
+        }
+
+        const therapistInfo: ITherapistInfoDto = {
+            name: therapistUser?.name,
+            emailId: therapistUser?.emailId,
+            bio: therapist?.bio,
+            photoUrl: therapistUser?.photoUrl || "",
+            ratePerSession: therapist?.ratePerSession,
+            rating: therapist?.rating,
+            availabilitySchedule: therapist?.availabilitySchedule,
+            specialties: therapist?.specialties,
+            contact: therapistUser?.contact || ""
+        };
+
+        resp.status(200).json(createResponse("Therapist fetched successfully!", role, therapistInfo));
+
+    } catch (error: any) {
+        console.error('Therapist info fetch error:', error);
+        const response = createResponse(
+            error.message || "Failed to fetch therapist info", 
             null, 
             null
         );

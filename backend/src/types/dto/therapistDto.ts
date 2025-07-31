@@ -17,3 +17,10 @@ export interface ITherapistRequest extends AuthenticatedRequest{
     therapist?: ITherapist
 }
 
+
+export interface ITherapistInfoDto extends ITherapistDto {
+    name: string;
+    emailId: string;
+    rating: number;
+}
+
