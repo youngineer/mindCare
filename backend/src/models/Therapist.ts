@@ -6,50 +6,56 @@ dotenv.config();
 
 
 const therapistSchema = new Schema<ITherapist>({
+    userId: {
+        type: String,
+        required: true,
+        unique: true
+    },
     specialties: {
         type: [String],
-        required: true,
-        validate(value: string) {
-            if(!validator.isAlphanumeric(value)) {
-                throw new Error("Invalid speciality");
-            }
-        }
+        // validate(value: string) {
+        //     if(!validator.isAlphanumeric(value)) {
+        //         throw new Error("Invalid speciality");
+        //     }
+        // }
     },
     bio: {
         type: String,
         default: "Your doctor! Here to help",
-        validate(value: string) {
-            if(!validator.isAlphanumeric(value)) {
-                throw new Error("Invalid speciality");
-            }
-        }, 
-        trim: true
+        trim: true,
+        maxLength: 500
     },
     rating: {
         type: Number,
-        validate(value: string) {
-            if(!validator.isNumeric(value)) {
-                throw new Error("Invalid rating");
-            } else if (Number(value) > 5 || Number(value) < 0) {
-                throw new Error("Min rating: 0; Max rating: 5");
+        default: 0,
+        min: 0,
+        max: 5,
+        validate(value: number) {
+            if (value < 0 || value > 5) {
+                throw new Error("Rating must be between 0 and 5");
             }
-        }, 
-        trim: true
+        }
     },
     availabilitySchedule: {
         type: [Date],
-        validate(value: string) {
+        validate(value: [Date]) {
             const today = new Date();
-            const inputDate = new Date(value);
-
-            if (!validator.isDate(value)) {
-                throw new Error("Invalid date");
-            }
             const yesterday = new Date(today);
             yesterday.setDate(today.getDate() - 1);
 
+            // Check each date in the array
+            for (let i = 0; i < value.length; i++) {
+            const inputDate = new Date(value[i]);
+
+            // Check if the value is a valid date
+            if (isNaN(inputDate.getTime())) {
+                throw new Error("Invalid date");
+            }
+
+            // Check if the date is greater than yesterday
             if (inputDate <= yesterday) {
                 throw new Error("Date must be greater than yesterday");
+            }
             }
         }
     },
@@ -59,14 +65,14 @@ const therapistSchema = new Schema<ITherapist>({
             if(!validator.isNumeric(value) || Number(value) < 0) {
                 throw new Error("Invalid rate");
             }
-        },
-        required: true, 
+        }, 
         trim: true
     },
 },
 { timestamps: true });
 
+therapistSchema.index({ userId: 1 }, { unique: true, name: 'idx_therapist_userId' });
 
-const Therapist = model('Therapist', therapistSchema);
+const Therapist = model<ITherapist>('Therapist', therapistSchema);
 
 export default Therapist;

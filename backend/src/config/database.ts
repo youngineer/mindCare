@@ -11,6 +11,7 @@ const connectToDatabase = async () => {
         console.log("Connected to the db");
     } catch (err) {
         console.error("Failed to connect to the db", err);
+        throw err; // Re-throw to prevent server startup with no DB
     }
 };
 

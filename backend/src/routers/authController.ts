@@ -5,25 +5,46 @@ import User from '../models/User.js';
 import { IUserDocument } from '../types/user.js';
 import { IResponseDto } from '../types/dto/responseDto.js';
 import { createResponse } from '../utils/responseUtils.js';
+import Therapist from '../models/Therapist.js';
+import Patient from '../models/Patient.js';
 
-const authRouter: Router = express.Router();
+const authController: Router = express.Router();
 
-authRouter.post("/auth/signup", async (req: Request, resp: Response): Promise<void> => {
+authController.post("/auth/signup", async (req: Request, resp: Response): Promise<void> => {
     try {
         validateSignUpRequest(req.body);
 
-        const { name, emailId, password } = req.body;
+        const { name, emailId, password, role } = req.body;
         const hashedPassword: string = await bcrypt.hash(password, 10);
 
         const user: IUserDocument = new User({
             name,
             emailId,
-            password: hashedPassword
+            password: hashedPassword,
+            role: role
         });
 
         const savedUser: IUserDocument = await user.save();
+
+        if(role === 'therapist') {
+            const therapist = new Therapist({
+                userId: savedUser._id
+            });
+            await therapist.save();
+        } else if(role === 'patient') {
+            const patient = new Patient({
+                userId: savedUser._id
+            });
+            await patient.save();
+        }
+        
         const token = savedUser.getJWT();
-        resp.cookie("token", token);
+        resp.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 24 * 60 * 60 * 1000
+        });
 
         const response: IResponseDto = {
             message: "User created successfully!",
@@ -46,7 +67,7 @@ authRouter.post("/auth/signup", async (req: Request, resp: Response): Promise<vo
 });
 
 
-authRouter.post("/auth/login", async(req: Request, resp: Response) => {
+authController.post("/auth/login", async(req: Request, resp: Response) => {
     try {
         const { emailId, password } = req.body;
         const user: IUserDocument | null = await User.findOne({ emailId });
@@ -61,7 +82,12 @@ authRouter.post("/auth/login", async(req: Request, resp: Response) => {
         }
 
         const token = user.getJWT();
-        resp.cookie("token", token);
+        resp.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 24 * 60 * 60 * 1000
+        });
 
         const response = createResponse("Login successful", user.role, {
             name: user.name,
@@ -77,4 +103,4 @@ authRouter.post("/auth/login", async(req: Request, resp: Response) => {
 
 
 
-export default authRouter;
+export default authController;

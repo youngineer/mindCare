@@ -1,4 +1,4 @@
-import { CookieOptions } from "express";
+import { Request } from "express";
 import { Role } from "../common.js";
 import { IUserDocument } from "../user.js";
 
@@ -16,5 +16,6 @@ export interface ISignUpDto extends ILoginDto {
 export interface AuthenticatedRequest extends Request {
   user?: IUserDocument;
   cookies: { [key: string]: string };
+  role?: Role
 }
 

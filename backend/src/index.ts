@@ -3,6 +3,9 @@ import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import connectToDatabase from "./config/database.js";
+import authRouter from "./routers/authController.js";
+import patientController from "./routers/patientController.js";
+import therapistController from "./routers/therapistController.js";
 
 dotenv.config();
 
@@ -14,19 +17,24 @@ const app = express();
 app.use(
     cors({
         credentials: true, // for jwt token processing
-        origin: PORT //only process the requests from one frontend server
+        origin: FRONTEND_URL //only process the requests from one frontend server
     })
 );
 app.use(express.json()); // process json values from the frontend
 app.use(cookieParser()); // cookie-parser
 
 
+app.use("/", authRouter);
+app.use("/", patientController);
+app.use("/", therapistController);
+
 connectToDatabase()
     .then(() => {
         app.listen(PORT, () => {
             console.log(`Successfully listening on port: ${PORT}`);
-        })
+        });
     })
     .catch((e) => {
         console.error(`Error while connecting to db: ${e}`);
-});
+        process.exit(1);
+    });

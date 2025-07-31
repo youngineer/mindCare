@@ -25,10 +25,8 @@ const selfCareTaskSchema = new Schema<ISelfCareTask>({
         type: String,
         required: true,
         trim: true,
-        enum: {
-            values: ["high", "low"],
-            message: '{VALUE} is not supported'
-        }
+        enum:  ["high", "low"],
+        message: '{VALUE} is not supported'
     },
     dueDate: {
         type: Date,

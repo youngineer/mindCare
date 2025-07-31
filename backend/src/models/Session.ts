@@ -33,10 +33,8 @@ const sessionSchema = new Schema<ISession>({
     status: {
         type: String, 
         required: true, 
-        enum: { 
-            values: ['completed', 'scheduled', 'cancelled'], 
-            message: '{VALUE} is not supported' 
-        },
+        enum: ['completed', 'scheduled', 'cancelled'], 
+        message: '{VALUE} is not supported',
         trim: true
     },
     notes: {

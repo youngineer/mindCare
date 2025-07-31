@@ -4,10 +4,11 @@ import dotenv from "dotenv";
 import { createResponse } from "../utils/responseUtils.js";
 import User from "../models/User.js";
 import { AuthenticatedRequest } from "../types/dto/authDto.js";
+import { IUserDocument } from "../types/user.js";
 
 dotenv.config();
 
-const userAuth = async (req: AuthenticatedRequest, resp: Response, next: NextFunction): Promise<void> => {
+export const userAuth = async (req: AuthenticatedRequest, resp: Response, next: NextFunction): Promise<void> => {
   try {
     const { token } = req.cookies;
 
@@ -15,6 +16,7 @@ const userAuth = async (req: AuthenticatedRequest, resp: Response, next: NextFun
       resp.status(401).json(
         createResponse("Authentication token missing", null, null)
       );
+      return;
     }
 
     const jwtSecret = process.env.JWT_SECRET;
@@ -25,16 +27,17 @@ const userAuth = async (req: AuthenticatedRequest, resp: Response, next: NextFun
     const decoded = jwt.verify(token, jwtSecret) as { _id: string };
     const userId: string = decoded._id;
 
-    const user = await User.findById(userId);
+    const user: IUserDocument | null = await User.findById(userId);
     if (!user) {
       resp.status(401).json(
         createResponse("Invalid or expired token. Please log in again.", null, null)
       );
+      return;
     } else {
         req.user = user;
         next();
     }
-    
+
   } catch (error: any) {
     const response = createResponse(
       error.message || "Unexpected error during authentication",
@@ -45,4 +48,3 @@ const userAuth = async (req: AuthenticatedRequest, resp: Response, next: NextFun
   }
 };
 
-export default userAuth;

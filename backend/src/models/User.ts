@@ -13,18 +13,22 @@ const userSchema = new Schema<IUserDocument>({
     name: {
         type: String, 
         required: true,
+        trim: true,
         validate(value: string) {
-            if(!validator.isAlpha(value)) {
-                throw new Error("Invalid name");
+            if(!validator.isAlpha(value, 'en-US', { ignore: ' ' })) {
+                throw new Error("Invalid name - only letters and spaces allowed");
             }
         }
     },
     emailId: {
         type: String, 
         required: true,
+        unique: true,
+        lowercase: true,
+        trim: true,
         validate(value: string) {
             if(!validator.isEmail(value)) {
-                throw new Error("Invalid mail id");
+                throw new Error("Invalid email address");
             }
         }
     },
@@ -35,14 +39,11 @@ const userSchema = new Schema<IUserDocument>({
     role: {
         type: String, 
         required: true, 
-        enum: { 
-            values: ['therapist', 'admin', 'patient'], 
-            message: '{VALUE} is not supported' 
-        }
+        enum: ['therapist', 'admin', 'patient'], 
+        message: '{VALUE} is not supported',
     },
     contact: {
         type: String,
-        required: true,
         validate(value: string) {
             if(!validator.isMobilePhone(value)) {
                 throw new Error("Invalid phone number");

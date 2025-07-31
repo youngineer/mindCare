@@ -5,9 +5,13 @@ import { IPatient } from '../types/user.js';
 dotenv.config();
 
 const patientSchema  = new Schema<IPatient>({
+    userId: {
+        type: String,
+        required: true,
+        unique: true
+    },
     dateOfBirth: {
         type: Date,
-        required: true,
         validate(value: string) {
             if(!validator.isDate(value)) {
                 throw new Error("Invalid Date");
@@ -15,16 +19,13 @@ const patientSchema  = new Schema<IPatient>({
         }
     },
     gender: {
-        enum: {
-            values: ["male", "female"],
-            message: '{VALUE} is not supported'
-        },
-        required: true, 
+        type: String,
+        enum: ["male", "female"],
+        message: '{VALUE} is not supported',
         trim: true
     },
     healthConditions: {
         type: [String],
-        required: true
     },
     emergencyContact: {
         type: String,
@@ -38,8 +39,10 @@ const patientSchema  = new Schema<IPatient>({
 },
 { timestamps: true });
 
+patientSchema.index({ userId: 1 }, { unique: true, name: 'idx_patient_userId' });
 
-const Patient = model('Patient', patientSchema);
+
+const Patient = model<IPatient>('Patient', patientSchema);
 
 
 export default Patient;
