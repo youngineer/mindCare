@@ -102,5 +102,14 @@ authController.post("/auth/login", async(req: Request, resp: Response) => {
 });
 
 
+authController.post("/auth/logout", async(req: Request, resp: Response) => {
+    resp.cookie("token", null, {
+        expires: new Date(Date.now())
+    });
+
+    resp.status(200).json(createResponse("Logout successful!", null, null));
+})
+
+
 
 export default authController;
