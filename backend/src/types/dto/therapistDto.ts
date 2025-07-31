@@ -16,3 +16,4 @@ export interface ITherapistRequest extends AuthenticatedRequest{
     cookies: { [key: string]: string };
     therapist?: ITherapist
 }
+

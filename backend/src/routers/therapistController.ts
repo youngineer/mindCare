@@ -4,6 +4,10 @@ import { ITherapistDto, ITherapistRequest } from '../types/dto/therapistDto.js';
 import { createResponse } from '../utils/responseUtils.js';
 import User from '../models/User.js';
 import Therapist from '../models/Therapist.js';
+import { IPatient } from '../types/user.js';
+import Patient from '../models/Patient.js';
+import { Role } from '../types/common.js';
+import { IPatientInfoDto } from '../types/dto/patientDto.js';
 
 const therapistController = express.Router();
 
@@ -54,5 +58,54 @@ therapistController.patch("/therapist/updateInfo", userAuth, async (req: ITherap
         resp.status(500).json(response);
     }
 });
+
+
+therapistController.get("/therapist/patient/:patientId", userAuth, async(req: ITherapistRequest, resp: Response): Promise<void> => {
+    
+    try {
+        const patientId = req?.params?.patientId;
+        const role = req?.user?.role as Role;
+
+        if (role === "patient") {
+            resp.status(403).json(createResponse("Access denied", role, null));
+            return;
+        }
+
+        const patient = await Patient.findOne({ userId: patientId }).exec();
+        
+        if (!patient) {
+            resp.status(404).json(createResponse("Patient does not exist", role, null));
+            return;
+        }
+
+        const patientUser = await User.findById(patientId, "name emailId contact photoUrl").exec();
+        
+        if (!patientUser) {
+            resp.status(404).json(createResponse("Patient user information not found", role, null));
+            return;
+        }
+
+        const patientInfo: IPatientInfoDto = {
+            name: patientUser.name,
+            contact: patientUser.contact || "",
+            photoUrl: patientUser.photoUrl || "",
+            dateOfBirth: patient.dateOfBirth,
+            emergencyContact: patient.emergencyContact || "",
+            gender: patient.gender,
+            healthConditions: patient.healthConditions || []
+        };
+
+        resp.status(200).json(createResponse("Patient info loaded successfully!", role, patientInfo));
+
+    } catch (error: any) {
+        console.error('Patient profile fetch error:', error);
+        const response = createResponse(
+            error.message || "Failed to retrieve patient profile", 
+            req?.user?.role || null, 
+            null
+        );
+        resp.status(500).json(response);
+    }
+})
 
 export default therapistController;

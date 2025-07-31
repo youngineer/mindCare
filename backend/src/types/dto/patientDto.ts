@@ -16,3 +16,8 @@ export interface IPatientRequest extends AuthenticatedRequest{
     cookies: { [key: string]: string };
     patient?: IPatient
 }
+
+
+export interface IPatientInfoDto extends IPatientDto {
+    name: string;
+}
