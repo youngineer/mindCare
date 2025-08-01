@@ -1,8 +1,8 @@
 import { SessionStatus } from "./common.js";
 
 export interface ISession {
-    patientId: number,
-    therapistId: number,
+    patientId: string,
+    therapistId: string,
     dateTime: Date,
     duration: number,
     status: SessionStatus,

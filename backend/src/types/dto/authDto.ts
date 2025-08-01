@@ -1,6 +1,7 @@
 import { Request } from "express";
 import { Role } from "../common.js";
 import { IUserDocument } from "../user.js";
+import { ISession } from "../session.js";
 
 
 export interface ILoginDto{
@@ -16,6 +17,7 @@ export interface ISignUpDto extends ILoginDto {
 export interface AuthenticatedRequest extends Request {
   user?: IUserDocument;
   cookies: { [key: string]: string };
-  role?: Role
+  role?: Role,
+  session?: ISession
 }
 

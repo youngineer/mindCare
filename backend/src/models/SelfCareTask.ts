@@ -5,7 +5,7 @@ import { ISelfCareTask } from '../types/task.js';
 
 const selfCareTaskSchema = new Schema<ISelfCareTask>({
     patientId: {
-        type: Number,
+        type: String,
         required: true
     },
     category: {

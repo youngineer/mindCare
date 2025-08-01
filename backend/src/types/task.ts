@@ -1,7 +1,7 @@
 import { PriorityList, TaskStatus } from "./common.js";
 
 export interface ISelfCareTask {
-    patientId: number,
+    patientId: string,
     category: string,
     description: string,
     priority: PriorityList,

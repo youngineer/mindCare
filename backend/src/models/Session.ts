@@ -5,11 +5,11 @@ import { ISession } from '../types/session.js';
 
 const sessionSchema = new Schema<ISession>({
     patientId: {
-        type: Number,
+        type: String,
         required: true
     },
     therapistId: {
-        type: Number,
+        type: String,
         required: true
     },
     dateTime: {

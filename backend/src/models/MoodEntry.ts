@@ -5,7 +5,7 @@ import { IMood } from '../types/mood.js';
 
 const moodSchema = new Schema<IMood>({
     patientId: {
-        type: Number,
+        type: String,
         required: true
     },
     date: {
