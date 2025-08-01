@@ -6,6 +6,7 @@ import connectToDatabase from "./config/database.js";
 import authRouter from "./routers/authController.js";
 import patientController from "./routers/patientController.js";
 import therapistController from "./routers/therapistController.js";
+import sessionController from "./routers/sessionController.js";
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ app.use(cookieParser()); // cookie-parser
 app.use("/", authRouter);
 app.use("/", patientController);
 app.use("/", therapistController);
+app.use("/", sessionController);
 
 connectToDatabase()
     .then(() => {
