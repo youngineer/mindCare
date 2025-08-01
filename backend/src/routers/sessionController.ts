@@ -4,7 +4,8 @@ import { AuthenticatedRequest } from '../types/dto/authDto.js';
 import { createResponse } from '../utils/responseUtils.js';
 import Session from '../models/Session.js';
 import User from '../models/User.js';
-import { SessionUpdateRequest } from '../types/dto/sessionDto.js';
+import { GetSessionsFilter, GetSessionsResponse, SessionUpdateRequest } from '../types/dto/sessionDto.js';
+import { SessionStatus } from '../types/common.js';
 
 
 const sessionController = express.Router();
@@ -146,6 +147,66 @@ sessionController.delete("session/delete", userAuth, async(req: AuthenticatedReq
         const response = createResponse(
             error.message || "Session deletion failed", 
             null, 
+            null
+        );
+        resp.status(500).json(response);
+    }
+});
+
+
+sessionController.get("/sessions/getAll", userAuth, async(req: AuthenticatedRequest, resp: Response) => {
+    try {
+        const userId = req?.user?._id as string;
+        const role = req?.user?.role;
+        const patientIdReq = role === "patient" ? userId : (req?.query?.patientId as string | undefined);
+        const therapistIdReq = role === "therapist" ? userId : (req?.query?.therapistId as string | undefined);
+        const requiredFields = role === "therapist"
+            ? "patientId status rating dateTime duration"
+            : "therapistId status rating dateTime duration";
+
+        const statusReq = req?.query?.status as string | undefined;
+        const from = req?.query?.from ? new Date(req?.query?.from as string) : undefined;
+        const to = req?.query?.to ? new Date(req?.query?.to as string) : undefined;
+
+        const filter: GetSessionsFilter = {};
+        if (patientIdReq) filter.patientId = patientIdReq;
+        if (therapistIdReq) filter.therapistId = therapistIdReq;
+        if (statusReq) filter.status = statusReq;
+        if (from || to) filter.dateTime = {};
+        if (from) filter.dateTime!.$gte = from;
+        if (to) filter.dateTime!.$lte = to;
+
+        const filteredSessions = await Session.find(filter, requiredFields).exec();
+        const sessions: { [key: string]: { withUser: string; dateTime: Date; duration: number; status: SessionStatus; rating: number } } = {};
+
+        for (const session of filteredSessions) {
+            let withUser = "";
+            if (role === "patient") {
+                const user = await User.findById(session.therapistId);
+                withUser = user?.name || "";
+            } else if (role === "therapist") {
+                const user = await User.findById(session.patientId);
+                withUser = user?.name || "";
+            }
+            sessions[session._id.toString()] = {
+                withUser,
+                dateTime: session.dateTime,
+                duration: session.duration,
+                status: session.status as SessionStatus,
+                rating: session.rating as number
+            };
+        }
+
+        resp.status(200).json(createResponse(
+            "Sessions fetched successfully!",
+            req?.user?.role || null,
+            { sessionId: sessions }
+        ));
+    } catch (error: any) {
+        console.error('Session retrieval failed:', error);
+        const response = createResponse(
+            error.message || "Session retrieval failed",
+            null,
             null
         );
         resp.status(500).json(response);
