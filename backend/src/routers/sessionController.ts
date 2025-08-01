@@ -21,22 +21,63 @@ sessionController.post("/session/add", userAuth, async(req: AuthenticatedRequest
 
         const therapistId = sessionReq?.therapistId;
         const therapistUser = await User.findById(therapistId);
+        const dateTime = new Date(sessionReq?.dateTime);
+        const duration = Number(sessionReq?.duration);
 
         if(therapistUser?.role !== 'therapist') {
             resp.status(400).json(createResponse("Invalid booking", req?.user?.role || null, null));
             return;
         }
 
+        const newStart = dateTime;
+        const newEnd = new Date(newStart.getTime() + duration * 60000);
+
+        const overlappingSessions = await Session.find({
+            therapistId: therapistId,
+            dateTime: { $lt: newEnd }
+        }).exec();
+
+        let isOverlapping = false;
+        for (const session of overlappingSessions) {
+            const sessionStart = new Date(session.dateTime).getTime();
+            const sessionEnd = sessionStart + session.duration * 60000;
+            // Overlap if newStart < sessionEnd && newEnd > sessionStart
+            if (newStart.getTime() < sessionEnd && newEnd.getTime() > sessionStart) {
+                isOverlapping = true;
+                break;
+            }
+        }
+
+        if (isOverlapping) {
+            resp.status(400).json(createResponse("The session overlaps with an existing session.", req?.user?.role || null, null));
+            return;
+        }
+        if(overlappingSessions) {
+            resp.status(400).json(createResponse("Therapist already has a session during this time", req?.user?.role || null, null));
+            return;
+        }
+
+        const isSessionExist = await Session.findOne({ 
+            therapistId: therapistId, 
+            patientId: patientId, 
+            dateTime: dateTime
+        }).exec();
+
+        if(isSessionExist) {
+            resp.status(400).json(createResponse("Timing unavailable", req?.user?.role || null, null));
+            return;
+        }
+
         const session = new Session({
             patientId: patientId,
             therapistId: therapistId,
-            dateTime: sessionReq?.dateTime,
+            dateTime: dateTime,
             duration: sessionReq?.duration,
             status: sessionReq?.status,
             rating: sessionReq?.rating
         });
 
-        const savedSession = await session.save();
+        await session.save();
         resp.status(201).json(createResponse("Session created successfully!", req?.user?.role || null, null))
 
     } catch (error: any) {
@@ -101,9 +142,9 @@ sessionController.delete("session/delete", userAuth, async(req: AuthenticatedReq
         resp.status(202).json(createResponse("Session deleted successfully!", req?.user?.role || null, null));
 
     } catch (error: any) {
-        console.error('Session update failed:', error);
+        console.error('Session deletion failed:', error);
         const response = createResponse(
-            error.message || "Session update failed", 
+            error.message || "Session deletion failed", 
             null, 
             null
         );
