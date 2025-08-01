@@ -65,31 +65,51 @@ patientController.patch("/patient/updateInfo", userAuth, async(req: IPatientRequ
 patientController.get("/patient/therapists", userAuth, async(req: IPatientRequest, resp: Response): Promise<void> => {
     try {
         const role = req?.user?.role;
+        let filtersRaw = req?.query?.filter;
+        let filters: string[] = [];
+
+        if (typeof filtersRaw === 'string') {
+        filters = [filtersRaw];
+        } else if (Array.isArray(filtersRaw)) {
+        filters = filtersRaw.map(String);
+        } else {
+        filters = []; 
+        }
         
         if(role === "therapist") {
             resp.status(403).json(createResponse("Access denied for therapist role", null, null));
             return;
         }
-        
-        // Fetch therapist users with required fields
+
+        // Query therapist collection for professional details
+        let therapists = null;
+        if(filters) {
+            therapists = await Therapist.find(
+                { specialties: {$in: filters} }, 
+                "userId rating ratePerSession"
+            ).exec();
+        } else {
+            therapists = await Therapist.find(
+                { role: "therapist" }, 
+                "userId rating ratePerSession"
+            ).exec();
+        }
+
+        const userIds = therapists.map(t => t.userId);
+        console.log("User IDs:", userIds);
+
         const userTherapists = await User.find(
-            { role: "therapist" }, 
+            { _id: { $in: userIds } },
             "_id name photoUrl"
-        ).exec();
+            ).exec();
+
+        console.log("Fetched therapists:", userTherapists);
 
         if (userTherapists.length === 0) {
             resp.status(200).json(createResponse("No therapists available", req?.user?.role || null, {}));
             return;
         }
 
-        // Collect all userIds for therapist collection query
-        const userIds = userTherapists.map(currTherapist => currTherapist._id);
-
-        // Query therapist collection for professional details
-        const therapists = await Therapist.find(
-            { userId: { $in: userIds } }, 
-            "userId rating ratePerSession"
-        ).exec();
 
         // Create map for therapist data
         const therapistDataMap = new Map();
