@@ -85,6 +85,30 @@ sessionController.put("/session/update", userAuth, async(req: AuthenticatedReque
         );
         resp.status(500).json(response);
     }
+});
+
+
+sessionController.delete("session/delete", userAuth, async(req: AuthenticatedRequest, resp: Response) => {
+    try {
+        const sessionId = req?.body?.sessionId;
+
+        if(!sessionId) {
+            resp.status(400).json(createResponse("No body found", req?.user?.role || null, null));
+            return;
+        }
+
+        await Session.findByIdAndDelete(sessionId);
+        resp.status(202).json(createResponse("Session deleted successfully!", req?.user?.role || null, null));
+
+    } catch (error: any) {
+        console.error('Session update failed:', error);
+        const response = createResponse(
+            error.message || "Session update failed", 
+            null, 
+            null
+        );
+        resp.status(500).json(response);
+    }
 })
 
 
