@@ -1,6 +1,6 @@
 export interface IMood {
     patientId: string,
-    date: Date,
+    dateTime: Date,
     moodLevel: number,
     tags: string[]
 }

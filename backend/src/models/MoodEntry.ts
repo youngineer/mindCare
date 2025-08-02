@@ -8,22 +8,21 @@ const moodSchema = new Schema<IMood>({
         type: String,
         required: true
     },
-    date: {
+    dateTime: {
         type: Date,
-        required: true
+        default: new Date()
     },
     moodLevel: {
         type: Number,
         required: true,
-        validate(value: string) {
-            if(!validator.isNumeric(value) || (Number(value) < 0 || Number(value) > 10)) {
+        validate(value: number) {
+            if(value < 1 || value > 10) {
                 throw new Error("Invalid mood level");
             }
         }
     },
     tags: {
-        type: [String],
-        required: true
+        type: [String]
     }
 },
 { timestamps: true });

@@ -7,6 +7,7 @@ import authRouter from "./routers/authController.js";
 import patientController from "./routers/patientController.js";
 import therapistController from "./routers/therapistController.js";
 import sessionController from "./routers/sessionController.js";
+import moodController from "./routers/moodController.js";
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use("/", authRouter);
 app.use("/", patientController);
 app.use("/", therapistController);
 app.use("/", sessionController);
+app.use("/", moodController);
 
 connectToDatabase()
     .then(() => {
