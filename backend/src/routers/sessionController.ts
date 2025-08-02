@@ -251,7 +251,7 @@ sessionController.get("/sessions/getAll", userAuth, async(req: AuthenticatedRequ
         if (to) filter.dateTime!.$lte = to;
 
         const filteredSessions = await Session.find(filter, requiredFields).exec();
-        console.log(filteredSessions)
+        
         const sessions: { [key: string]: { withUser: string; dateTime: Date; duration: number; status: SessionStatus; rating: number } } = {};
 
         for (const session of filteredSessions) {
@@ -281,6 +281,70 @@ sessionController.get("/sessions/getAll", userAuth, async(req: AuthenticatedRequ
         console.error('Session retrieval failed:', error);
         const response = createResponse(
             error.message || "Session retrieval failed",
+            null,
+            null
+        );
+        resp.status(500).json(response);
+    }
+});
+
+
+sessionController.delete("/sessions/delete/:sessionId", userAuth, async (req: AuthenticatedRequest, resp: Response) => {
+    try {
+        const sessionId = req?.params?.sessionId;
+        const userId = req?.user?._id;
+        if (!sessionId) {
+            resp.status(400).json(createResponse("Invalid delete request", req?.user?.role || null, null));
+            return;
+        }
+
+        const session = await Session.findById(sessionId);
+        if (!session) {
+            resp.status(404).json(createResponse("Session not found", req?.user?.role || null, null));
+            return;
+        }
+        const userIdStr = String(userId);
+        const patientIdStr = String(session.patientId);
+        const therapistIdStr = String(session.therapistId);
+
+        if (!(userIdStr === patientIdStr || userIdStr === therapistIdStr)) {
+            resp.status(403).json(createResponse("Invalid request", req?.user?.role || null, null));
+            return;
+        }
+
+        // Find and delete the session
+        const sessionToBeDeleted = await Session.findByIdAndDelete(sessionId);
+        if (!sessionToBeDeleted) {
+            resp.status(404).json(createResponse("Session not found", req?.user?.role || null, null));
+            return;
+        }
+
+        // Restore the slot to therapist's availabilitySchedule if therapist and dateTime exist
+        const therapistId = sessionToBeDeleted.therapistId;
+        const sessionDate = sessionToBeDeleted.dateTime;
+        const therapist = await Therapist.findOne({ userId: therapistId });
+
+        if (therapist && sessionDate) {
+            // Only add if not already present
+            const exists = therapist.availabilitySchedule.some(
+                (slot: Date) => new Date(slot).getTime() === new Date(sessionDate).getTime()
+            );
+            if (!exists) {
+                therapist.availabilitySchedule.push(sessionDate);
+                therapist.availabilitySchedule.sort((a: Date, b: Date) => new Date(a).getTime() - new Date(b).getTime());
+                await therapist.save();
+            }
+        }
+
+        resp.status(200).json(createResponse(
+            "Session deleted successfully!",
+            req?.user?.role || null,
+            null
+        ));
+    } catch (error: any) {
+        console.error('Session deletion failed:', error);
+        const response = createResponse(
+            error.message || "Session deletion failed",
             null,
             null
         );
