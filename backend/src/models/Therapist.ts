@@ -60,7 +60,7 @@ const therapistSchema = new Schema<ITherapist>({
         }
     },
     ratePerSession: {
-        type: Number,
+        type: String,
         validate(value: string) {
             if(!validator.isNumeric(value) || Number(value) < 0) {
                 throw new Error("Invalid rate");

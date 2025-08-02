@@ -56,7 +56,7 @@ const sessionSchema = new Schema<ISession>({
     },
     duration: {
         type: Number,
-        required: true,
+        default: 60,
         validate(value: number) {
             if (typeof value !== 'number' || isNaN(value)) {
                 throw new Error("Invalid duration");

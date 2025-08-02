@@ -4,7 +4,6 @@ import { ITherapistDto, ITherapistRequest } from '../types/dto/therapistDto.js';
 import { createResponse } from '../utils/responseUtils.js';
 import User from '../models/User.js';
 import Therapist from '../models/Therapist.js';
-import { IPatient } from '../types/user.js';
 import Patient from '../models/Patient.js';
 import { Role } from '../types/common.js';
 import { IPatientInfoDto } from '../types/dto/patientDto.js';

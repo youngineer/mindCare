@@ -23,7 +23,7 @@ export interface ITherapist extends IUser{
     rating: number,
     bio: string,
     specialties: string[],
-    ratePerSession: number,
+    ratePerSession: string,
     availabilitySchedule: Date[]
 }
 

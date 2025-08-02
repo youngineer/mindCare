@@ -4,88 +4,162 @@ import { AuthenticatedRequest } from '../types/dto/authDto.js';
 import { createResponse } from '../utils/responseUtils.js';
 import Session from '../models/Session.js';
 import User from '../models/User.js';
-import { GetSessionsFilter, GetSessionsResponse, SessionUpdateRequest } from '../types/dto/sessionDto.js';
+import { GetSessionsFilter, SessionUpdateRequest } from '../types/dto/sessionDto.js';
 import { SessionStatus } from '../types/common.js';
+import Therapist from '../models/Therapist.js';
 
 
 const sessionController = express.Router();
 
 
-sessionController.post("/session/add", userAuth, async(req: AuthenticatedRequest, resp: Response): Promise<void> => {
+sessionController.post("/session/add", userAuth, async (req: AuthenticatedRequest, resp: Response): Promise<void> => {
     try {
         const sessionReq = req?.body?.sessionReq;
         const patientId = req?.user?._id;
-        if(!sessionReq) {
-            resp.status(404).json(createResponse("No sessionInfo found", req?.user?.role || null, null))
+        const role = req?.user?.role;
+
+        // Validate sessionReq presence
+        if (!sessionReq) {
+            resp.status(400).json(createResponse("No sessionInfo found", role || null, null));
             return;
         }
 
+        // Validate therapistId and dateTime
         const therapistId = sessionReq?.therapistId;
+        const dateTime = sessionReq?.dateTime ? new Date(sessionReq.dateTime) : null;
+        const duration = Number(sessionReq?.duration) || 60;
+
+        if (!therapistId || !dateTime || isNaN(dateTime.getTime())) {
+            resp.status(400).json(createResponse("Therapist ID and valid dateTime are required", role || null, null));
+            return;
+        }
+
+        // Validate future date
+        const now = new Date();
+        if (dateTime <= now) {
+            resp.status(400).json(createResponse("Session must be scheduled for a future date", role || null, null));
+            return;
+        }
+
+        // Role-based access control
+        if (role !== "patient") {
+            resp.status(403).json(createResponse("Only patients can book sessions", role || null, null));
+            return;
+        }
+
+        // Prevent therapist from booking their own session
+        if (patientId === therapistId) {
+            resp.status(403).json(createResponse("Cannot book session with yourself", role, null));
+            return;
+        }
+
+        // Therapist existence and role check
         const therapistUser = await User.findById(therapistId);
-        const dateTime = new Date(sessionReq?.dateTime);
-        const duration = Number(sessionReq?.duration);
-
-        if(therapistUser?.role !== 'therapist') {
-            resp.status(400).json(createResponse("Invalid booking", req?.user?.role || null, null));
+        if (!therapistUser || therapistUser.role !== "therapist") {
+            resp.status(404).json(createResponse("Therapist not found", role || null, null));
             return;
         }
 
-        const newStart = dateTime;
-        const newEnd = new Date(newStart.getTime() + duration * 60000);
+        // Patient existence and role check
+        const patientUser = await User.findById(patientId);
+        if (!patientUser || patientUser.role !== "patient") {
+            resp.status(403).json(createResponse("Patient profile not found", role || null, null));
+            return;
+        }
 
-        const overlappingSessions = await Session.find({
+        // Check for duplicate session (same patient, therapist, and dateTime)
+        const isSessionExist = await Session.findOne({
             therapistId: therapistId,
-            dateTime: { $lt: newEnd }
-        }).exec();
-
-        let isOverlapping = false;
-        for (const session of overlappingSessions) {
-            const sessionStart = new Date(session.dateTime).getTime();
-            const sessionEnd = sessionStart + session.duration * 60000;
-            // Overlap if newStart < sessionEnd && newEnd > sessionStart
-            if (newStart.getTime() < sessionEnd && newEnd.getTime() > sessionStart) {
-                isOverlapping = true;
-                break;
-            }
-        }
-
-        if (isOverlapping) {
-            resp.status(400).json(createResponse("The session overlaps with an existing session.", req?.user?.role || null, null));
-            return;
-        }
-        if(overlappingSessions) {
-            resp.status(400).json(createResponse("Therapist already has a session during this time", req?.user?.role || null, null));
-            return;
-        }
-
-        const isSessionExist = await Session.findOne({ 
-            therapistId: therapistId, 
-            patientId: patientId, 
+            patientId: patientId,
             dateTime: dateTime
         }).exec();
 
-        if(isSessionExist) {
-            resp.status(400).json(createResponse("Timing unavailable", req?.user?.role || null, null));
+        if (isSessionExist) {
+            resp.status(409).json(createResponse("Session already exists at this time", role || null, null));
             return;
         }
 
+        // Check for therapist's overlapping sessions
+        const newStart = dateTime;
+        const newEnd = new Date(newStart.getTime() + duration * 60000);
+
+        const overlappingSession = await Session.findOne({
+            therapistId: therapistId,
+            $expr: {
+                $and: [
+                    { $lt: ["$dateTime", newEnd] },
+                    { $gt: [{ $add: ["$dateTime", { $multiply: ["$duration", 60000] }] }, newStart] }
+                ]
+            }
+        }).exec();
+
+        if (overlappingSession) {
+            resp.status(409).json(createResponse("Therapist has another session during this time", role || null, null));
+            return;
+        }
+
+        // Check therapist availability (if availabilitySchedule exists)
+        const therapist = await Therapist.findOne({ userId: therapistId }).exec();
+        if (!therapist) {
+            resp.status(404).json(createResponse("Therapist profile not found", role || null, null));
+            return;
+        }
+
+        // Only check availability if therapist has set availability schedule
+        if (Array.isArray(therapist.availabilitySchedule) && therapist.availabilitySchedule.length > 0) {
+            const available = therapist.availabilitySchedule.some(
+                (slot) => new Date(slot).getTime() === newStart.getTime()
+            );
+            if (!available) {
+                resp.status(409).json(createResponse("Selected time is not in therapist's availability", role || null, null));
+                return;
+            }
+        }
+
+        // Create session with all required fields
         const session = new Session({
             patientId: patientId,
             therapistId: therapistId,
-            dateTime: dateTime,
-            duration: sessionReq?.duration,
-            status: sessionReq?.status,
-            rating: sessionReq?.rating
+            dateTime: dateTime
         });
 
-        await session.save();
-        resp.status(201).json(createResponse("Session created successfully!", req?.user?.role || null, null))
+        const savedSession = await session.save();
+        if (!savedSession) {
+            resp.status(500).json(createResponse("Error occurred, please try again", role || null, null));
+            return;
+        }
+
+        // Remove booked slot from therapist's availabilitySchedule
+        if (Array.isArray(therapist.availabilitySchedule) && therapist.availabilitySchedule.length > 0) {
+            therapist.availabilitySchedule = therapist.availabilitySchedule.filter(
+                (slot) => new Date(slot).getTime() !== newStart.getTime()
+            );
+            await therapist.save();
+        }
+
+        // Return comprehensive response following MindCare patterns
+        resp.status(201).json(createResponse("Session created successfully!", role || null, {
+            sessionId: savedSession._id,
+            sessionDetails: {
+                patientId: savedSession.patientId,
+                therapistId: savedSession.therapistId,
+                dateTime: savedSession.dateTime,
+                duration: savedSession.duration,
+                status: savedSession.status,
+                notes: savedSession.notes,
+                rating: savedSession.rating
+            },
+            therapistInfo: {
+                name: therapistUser.name,
+                photoUrl: therapistUser.photoUrl
+            }
+        }));
 
     } catch (error: any) {
-        console.error('Session saving to db failed:', error);
+        console.error('Session booking failed:', error);
         const response = createResponse(
-            error.message || "Could not save to db", 
-            null, 
+            error.message || "Session booking failed",
+            null,
             null
         );
         resp.status(500).json(response);
@@ -177,6 +251,7 @@ sessionController.get("/sessions/getAll", userAuth, async(req: AuthenticatedRequ
         if (to) filter.dateTime!.$lte = to;
 
         const filteredSessions = await Session.find(filter, requiredFields).exec();
+        console.log(filteredSessions)
         const sessions: { [key: string]: { withUser: string; dateTime: Date; duration: number; status: SessionStatus; rating: number } } = {};
 
         for (const session of filteredSessions) {

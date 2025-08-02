@@ -7,7 +7,7 @@ export interface ITherapistDto {
     specialties: string[],
     bio: string,
     availabilitySchedule: Date[],
-    ratePerSession: number
+    ratePerSession: string
 };
 
 

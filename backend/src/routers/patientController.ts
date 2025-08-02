@@ -62,18 +62,18 @@ patientController.patch("/patient/updateInfo", userAuth, async(req: IPatientRequ
 
 
 
-patientController.get("/patient/therapists", userAuth, async(req: IPatientRequest, resp: Response): Promise<void> => {
+patientController.get("/patient/therapistList", userAuth, async(req: IPatientRequest, resp: Response): Promise<void> => {
     try {
         const role = req?.user?.role;
         let filtersRaw = req?.query?.filter;
         let filters: string[] = [];
 
         if (typeof filtersRaw === 'string') {
-        filters = [filtersRaw];
+            filters = [filtersRaw];
         } else if (Array.isArray(filtersRaw)) {
-        filters = filtersRaw.map(String);
+            filters = filtersRaw.map(String);
         } else {
-        filters = []; 
+            filters = []; 
         }
         
         if(role === "therapist") {
@@ -83,27 +83,24 @@ patientController.get("/patient/therapists", userAuth, async(req: IPatientReques
 
         // Query therapist collection for professional details
         let therapists = null;
-        if(filters) {
+        if(filters.length !== 0) {
             therapists = await Therapist.find(
                 { specialties: {$in: filters} }, 
                 "userId rating ratePerSession"
             ).exec();
         } else {
             therapists = await Therapist.find(
-                { role: "therapist" }, 
+                {}, 
                 "userId rating ratePerSession"
             ).exec();
         }
 
         const userIds = therapists.map(t => t.userId);
-        console.log("User IDs:", userIds);
 
         const userTherapists = await User.find(
             { _id: { $in: userIds } },
             "_id name photoUrl"
             ).exec();
-
-        console.log("Fetched therapists:", userTherapists);
 
         if (userTherapists.length === 0) {
             resp.status(200).json(createResponse("No therapists available", req?.user?.role || null, {}));
