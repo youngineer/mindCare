@@ -176,7 +176,7 @@ sessionController.put("/session/update", userAuth, async(req: AuthenticatedReque
             return;
         }
 
-        const sessionUpdateBody: SessionUpdateRequest = {
+        const updatedData: SessionUpdateRequest = {
             dateTime: sessionUpdateRequest?.dateTime,
             duration: sessionUpdateRequest?.duration,
             rating: sessionUpdateRequest?.rating,
@@ -184,7 +184,9 @@ sessionController.put("/session/update", userAuth, async(req: AuthenticatedReque
             status: sessionUpdateRequest?.status
         }
 
-        const updatedSession = await Session.findByIdAndUpdate(sessionId, sessionUpdateBody);
+        const updatedSession = await Session.findByIdAndUpdate(sessionId,
+            { $set: updatedData },
+            { new: true, runValidators: true });
         if(!updatedSession) {
             resp.status(404).json(createResponse("Session not found", req?.user?.role || null, null));
             return;
