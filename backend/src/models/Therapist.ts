@@ -12,12 +12,7 @@ const therapistSchema = new Schema<ITherapist>({
         unique: true
     },
     specialties: {
-        type: [String],
-        // validate(value: string) {
-        //     if(!validator.isAlphanumeric(value)) {
-        //         throw new Error("Invalid speciality");
-        //     }
-        // }
+        type: [String]
     },
     bio: {
         type: String,

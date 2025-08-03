@@ -8,6 +8,10 @@ const selfCareTaskSchema = new Schema<ISelfCareTask>({
         type: String,
         required: true
     },
+    therapistId: {
+        type: String,
+        required: true
+    },
     category: {
         type: String,
         required: true,
@@ -15,17 +19,13 @@ const selfCareTaskSchema = new Schema<ISelfCareTask>({
     },
     description: {
         type: String,
-        validate(value: string) {
-            if(!validator.isAlphanumeric(value)) {
-                throw new Error("Invalid description");
-            }
-        }
+        default: "Please engage in this task honestly"
     },
     priority: {
         type: String,
         required: true,
         trim: true,
-        enum:  ["high", "low"],
+        enum:  ["high", "low", "medium"],
         message: '{VALUE} is not supported'
     },
     dueDate: {
@@ -48,16 +48,12 @@ const selfCareTaskSchema = new Schema<ISelfCareTask>({
     },
     status: {
         type: String,
-        default: "pending",
         trim: true,
+        default: "assigned",
         enum: {
-            values: ["high", "low"],
+            values: ["assigned", "in-progress", "pending"],
             message: `{VALUE} invalid`
         }
-    },
-    assignedBy: {
-        type: Number,
-        required: true
     }
 },
 { timestamps: true });
