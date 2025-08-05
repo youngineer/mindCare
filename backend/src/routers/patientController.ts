@@ -233,6 +233,15 @@ patientController.post("/patient/generateSummary", userAuth, async(req: Authenti
         const messageToAi = PATIENT_DAILY_SUMMARY_PROMPT + "\n\n Today's patient messages: " + todaysUserMessages + "\n\n Today's patient mood level: " + todaysMoods;
         const aiResponse = await getAiChatResponse(messageToAi);
 
+        const summaryText = aiResponse?.choices[0]?.message?.content;
+        const start = summaryText.indexOf('{');
+        const end = summaryText.lastIndexOf('}') + 1;
+        const jsonText = summaryText.slice(start, end);
+
+        const summary = JSON.parse(jsonText);
+
+        resp.status(201).json(createResponse("Summary generated successfully!", user?.role || null, summary));
+
 
     } catch (error: any) {
         console.error('Therapist summary generation error:', error);
