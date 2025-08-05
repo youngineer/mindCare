@@ -3,12 +3,8 @@ import { IChatBotLog } from '../types/chatBotLog.js';
 
 const chatBotLogSchema = new Schema<IChatBotLog>({
     userId: {
-        type: Number,
+        type: String,
         required: true,
-    },
-    timestamp: {
-        type: Date,
-        required: true
     },
     userMessage: {
         type: String,

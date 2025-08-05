@@ -3,16 +3,26 @@ import { GoogleGenAI } from "@google/genai";
 const ai = new GoogleGenAI({});
 
 
-export async function getAiResponse(prompt: string): Promise<string | null> {
+export async function getAiChatResponse(prompt: string): Promise<string | null> {
     const response = await ai.models.generateContent({
     model: "gemini-2.5-pro",
     contents: prompt,
   });
 
   if(!response.text) return null;
-  console.log(response.text);
   return response.text;
 //   return getJsonFromAIResponse(response.text);
+}
+
+
+export async function getAiSummaryResponse(prompt: string): Promise<JSON | null> {
+    const response = await ai.models.generateContent({
+    model: "gemini-2.5-pro",
+    contents: prompt,
+  });
+
+  if(!response.text) return null;
+  return getJsonFromAIResponse(response.text);
 }
 
 

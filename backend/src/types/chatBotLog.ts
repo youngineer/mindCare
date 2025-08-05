@@ -1,6 +1,5 @@
 export interface IChatBotLog {
-    userId: number,
-    timestamp: Date,
+    userId: string,
     userMessage: string,
     botResponse: string
 }
