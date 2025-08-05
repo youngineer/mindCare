@@ -5,6 +5,8 @@ import { createResponse } from '../utils/responseUtils.js';
 import { PATIENT_CHATBOT_PROMPT } from '../utils/constants.js';
 import { getAiChatResponse } from '../utils/aiResponse.js';
 import ChatBotLog from '../models/ChatBotLog.js';
+import User from '../models/User.js';
+import { Role } from '../types/common.js';
 
 const chatBotController = express.Router();
 
@@ -37,6 +39,38 @@ chatBotController.post("/chatBot/add", userAuth, async(req: AuthenticatedRequest
         console.error('Could not post message:', error);
         const response = createResponse(
             "Could not process message, try again", 
+            user?.role || null, 
+            null
+        );
+        resp.status(500).json(response);
+    }
+});
+
+
+chatBotController.get("/chatBot/history", userAuth, async(req: AuthenticatedRequest, resp: Response) => {
+    const user = req?.user;
+    try {
+        if(!user) {
+            resp.status(404).json(createResponse("User not found", null, null));
+            return;
+        }
+
+        if(user?.role != "patient") {
+            resp.status(401).json(createResponse("Unauthorized request", user?.role || null, null));
+            return;
+        }
+
+        const allChats = await ChatBotLog.find({userId: user?._id}, "userMessage botResponse createdAt");
+        if(!allChats) {
+            resp.status(404).json(createResponse("Chat not found", user?.role || null, null));
+            return;
+        }
+
+        resp.status(200).json(createResponse("Messages fetched successfully!", user?.role || null, allChats));
+    } catch (error: any) {
+        console.error('Could not fetch messages:', error);
+        const response = createResponse(
+            "Could not fetch messages, try again", 
             user?.role || null, 
             null
         );
