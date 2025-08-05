@@ -8,12 +8,18 @@ import Therapist from '../models/Therapist.js';
 import { ITherapistInfoDto, ITherapistRequest } from '../types/dto/therapistDto.js';
 import { Role } from '../types/common.js';
 import { IUser } from '../types/user.js';
+import { AuthenticatedRequest } from '../types/dto/authDto.js';
+import ChatBotLog from '../models/ChatBotLog.js';
+import { PATIENT_DAILY_SUMMARY_PROMPT } from '../utils/constants.js';
+import MoodEntry from '../models/MoodEntry.js';
+import { getAiChatResponse } from '../utils/aiResponse.js';
 
 
 const patientController = express.Router();
 
 patientController.patch("/patient/updateInfo", userAuth, async(req: IPatientRequest, resp: Response) => {
     let updatedUser = null;
+    const user = req?.user;
     try {
         const userId = req?.user?._id;
         const patientInfo: IPatientDto = req?.body?.patientInfo;
@@ -41,7 +47,7 @@ patientController.patch("/patient/updateInfo", userAuth, async(req: IPatientRequ
 
         // Ensure updatedUser is available
         if (!updatedUser) {
-            resp.status(500).json(createResponse("User information update failed.", null, null));
+            resp.status(500).json(createResponse("User information update failed.", user?.role || null, null));
             return;
         }
 
@@ -55,7 +61,7 @@ patientController.patch("/patient/updateInfo", userAuth, async(req: IPatientRequ
             }
         ));
     } catch (error: any) {
-        const response = createResponse(error.message, null, null);
+        const response = createResponse(error.message, user?.role || null, null);
         resp.status(500).json(response);
     }
 });
@@ -63,6 +69,7 @@ patientController.patch("/patient/updateInfo", userAuth, async(req: IPatientRequ
 
 
 patientController.get("/patient/therapistList", userAuth, async(req: IPatientRequest, resp: Response): Promise<void> => {
+    const user = req?.user;
     try {
         const role = req?.user?.role;
         let filtersRaw = req?.query?.filter;
@@ -77,7 +84,7 @@ patientController.get("/patient/therapistList", userAuth, async(req: IPatientReq
         }
         
         if(role === "therapist") {
-            resp.status(403).json(createResponse("Access denied for therapist role", null, null));
+            resp.status(403).json(createResponse("Access denied for therapist role", user?.role || null, null));
             return;
         }
 
@@ -103,7 +110,7 @@ patientController.get("/patient/therapistList", userAuth, async(req: IPatientReq
             ).exec();
 
         if (userTherapists.length === 0) {
-            resp.status(200).json(createResponse("No therapists available", req?.user?.role || null, {}));
+            resp.status(200).json(createResponse("No therapists available", user?.role || null, {}));
             return;
         }
 
@@ -135,14 +142,14 @@ patientController.get("/patient/therapistList", userAuth, async(req: IPatientReq
 
         resp.status(200).json(createResponse(
             "Therapist list fetched successfully", 
-            req?.user?.role || null, 
+            user?.role || null, 
             therapistList
         ));
     } catch (error: any) {
         console.error('Therapist list fetch error:', error);
         const response = createResponse(
             error.message || "Failed to fetch therapist list", 
-            null, 
+            user?.role || null, 
             null
         );
         resp.status(500).json(response);
@@ -151,6 +158,7 @@ patientController.get("/patient/therapistList", userAuth, async(req: IPatientReq
 
 
 patientController.get("/patient/therapist/:therapistId", userAuth, async(req: ITherapistRequest, resp: Response) => {
+    const user = req?.user;
     try {
         const therapistId = req?.params?.therapistId;
         const role = req?.user?.role as Role;
@@ -190,13 +198,51 @@ patientController.get("/patient/therapist/:therapistId", userAuth, async(req: IT
         console.error('Therapist info fetch error:', error);
         const response = createResponse(
             error.message || "Failed to fetch therapist info", 
-            null, 
+            user?.role || null, 
+            null
+        );
+        resp.status(500).json(response);
+    }
+});
+
+
+patientController.post("/patient/generateSummary", userAuth, async(req: AuthenticatedRequest, resp: Response) => {
+    const user = req?.user;
+    try {
+        const userId = user?._id;
+        if(user?.role === "admin") {
+            resp.status(401).json(createResponse("Unauthorized access", user?.role || null, null));
+            return;
+        }
+
+        const startDate = new Date();
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date();
+        endDate.setHours(23, 59, 59, 999);
+
+        const todaysMessagesWithID = await ChatBotLog.find({userId: user?._id}, "userMessage botResponse", {
+            $gte: startDate, $lte: endDate
+        });
+
+        const todaysMoodWithId = await MoodEntry.find({patientId: user?._id}, "moodLevel", {
+            $gte: startDate, $lte: endDate
+        });
+
+        const todaysUserMessages = todaysMessagesWithID.map(message => message.userMessage as string);
+        const todaysMoods = todaysMoodWithId.map(mood => mood.moodLevel);
+        const messageToAi = PATIENT_DAILY_SUMMARY_PROMPT + "\n\n Today's patient messages: " + todaysUserMessages + "\n\n Today's patient mood level: " + todaysMoods;
+        const aiResponse = await getAiChatResponse(messageToAi);
+
+
+    } catch (error: any) {
+        console.error('Therapist summary generation error:', error);
+        const response = createResponse(
+            error.message || "Failed to  generate therapist summary", 
+            user?.role || null, 
             null
         );
         resp.status(500).json(response);
     }
 })
-
-
 
 export default patientController;

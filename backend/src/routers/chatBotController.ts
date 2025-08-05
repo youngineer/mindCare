@@ -21,7 +21,7 @@ chatBotController.post("/chatBot/add", userAuth, async(req: AuthenticatedRequest
             resp.status(400).json(createResponse("Invalid request: missing message", user?.role || null, null));
             return;
         }
-        
+
         const startDate = new Date();
         startDate.setHours(0, 0, 0, 0);
         const endDate = new Date();
@@ -37,20 +37,22 @@ chatBotController.post("/chatBot/add", userAuth, async(req: AuthenticatedRequest
 
         const todaysMessages = todaysMessagesWithID.map(message => message.userMessage as string);
         const todaysMoods = todaysMoodWithId.map(mood => mood.moodLevel);
-        const messageToAi = PATIENT_CHATBOT_PROMPT + "\n\n Patient message: " + message + "\n\n Today's patient messages: " + todaysMessages + "\n\n Today's patient mood level: " + todaysMoods;
-        const aiResponse = await getAiChatResponse(messageToAi);
+        const todaysBotResponses = todaysMessagesWithID.map(message => message.botResponse as string);
+        const messageToAi = PATIENT_CHATBOT_PROMPT + "\n\n Patient message: " + message + "\n\n Today's patient messages: " + todaysMessages + "\n\n Today's patient mood level: " + todaysMoods+ "\n\n Today's previous AI responses: " + todaysBotResponses;
+        const aiJsonResponse = await getAiChatResponse(messageToAi);
 
-        if(!aiResponse) throw new Error("Error fetching AI response.");
+        if(!aiJsonResponse) throw new Error("Error fetching AI response.");
+        const botMessage = aiJsonResponse?.choices[0]?.message?.content;
 
         const userMessage = new ChatBotLog({
             userId: user?._id as string,
             userMessage: message,
-            botResponse: aiResponse
+            botResponse: botMessage
         });
 
         const savedMessages = await userMessage.save();
         if(!savedMessages) throw new Error("Could not save the message, try again"); 
-        resp.status(201).json(createResponse("Message loaded successfully!", user?.role || null , "\n\n Patient message: " + message + "\n\n Today's patient messages: " + todaysMessages + "\n\n Today's patient mood level: " + todaysMoods));
+        resp.status(201).json(createResponse("Message loaded successfully!", user?.role || null , botMessage));
     } catch (error: any) {
         console.error('Could not post message:', error);
         const response = createResponse(
