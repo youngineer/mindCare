@@ -20,8 +20,14 @@ chatBotController.post("/chatBot/add", userAuth, async(req: AuthenticatedRequest
             resp.status(400).json(createResponse("Invalid request: missing message", user?.role || null, null));
             return;
         }
+        const startDate = new Date();
+        const endDate = startDate.getDay() + 1;
+        const todaysMessagesWithID = await ChatBotLog.find({userId: user?._id}, "userMessage", {
+            $gte: startDate, $lte: endDate
+        });
 
-        const messageToAi = PATIENT_CHATBOT_PROMPT + "\n Patient message: " + message;
+        const todaysMessages = todaysMessagesWithID.map(message => message.userMessage as string);
+        const messageToAi = PATIENT_CHATBOT_PROMPT + "\n\n Patient message: " + message + "\n\n Today's patient messages: " + todaysMessages;
         const aiResponse = await getAiChatResponse(messageToAi);
 
         if(!aiResponse) throw new Error("Error fetching AI response.");
