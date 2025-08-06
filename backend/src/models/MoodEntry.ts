@@ -1,12 +1,13 @@
 import { Schema, model } from 'mongoose';
-import validator from 'validator';
 import { IMood } from '../types/mood.js';
+import User from './User.js';
 
 
 const moodSchema = new Schema<IMood>({
     patientId: {
         type: String,
-        required: true
+        required: true,
+        ref: User,
     },
     dateTime: {
         type: Date,

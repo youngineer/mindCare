@@ -2,11 +2,13 @@ import { Schema, model } from 'mongoose';
 import dotenv from 'dotenv';
 import validator from 'validator';
 import { IPatient } from '../types/user.js';
+import User from './User.js';
 dotenv.config();
 
 const patientSchema  = new Schema<IPatient>({
     userId: {
         type: String,
+        ref: User,
         required: true,
         unique: true
     },

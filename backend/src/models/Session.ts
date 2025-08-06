@@ -1,15 +1,18 @@
 import { Schema, model } from 'mongoose';
 import validator from 'validator';
 import { ISession } from '../types/session.js';
+import User from './User.js';
 
 
 const sessionSchema = new Schema<ISession>({
     patientId: {
         type: String,
+        ref: User,
         required: true
     },
     therapistId: {
         type: String,
+        ref: User,
         required: true
     },
     dateTime: {

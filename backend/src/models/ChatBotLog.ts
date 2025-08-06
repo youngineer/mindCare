@@ -1,10 +1,12 @@
 import { Schema, model } from 'mongoose';
 import { IChatBotLog } from '../types/chatBotLog.js';
+import User from './User.js';
 
 const chatBotLogSchema = new Schema<IChatBotLog>({
     userId: {
         type: String,
         required: true,
+        ref: User,
     },
     userMessage: {
         type: String,

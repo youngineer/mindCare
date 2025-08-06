@@ -1,16 +1,19 @@
 import { Schema, model } from 'mongoose';
 import validator from 'validator';
 import { ISelfCareTask } from '../types/task.js';
+import User from './User.js';
 
 
 const selfCareTaskSchema = new Schema<ISelfCareTask>({
     patientId: {
         type: String,
-        required: true
+        required: true,
+        ref: User,
     },
     therapistId: {
         type: String,
-        required: true
+        required: true,
+        ref: User,
     },
     category: {
         type: String,
