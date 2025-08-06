@@ -7,23 +7,20 @@ import { PATIENT_DAILY_SUMMARY_PROMPT } from './constants.js';
 import { getAiResponse } from './aiResponse.js';
 
 // Generate patient daily summary at 03.11 AM everyday
-export const generateReports = cron.schedule("27 20 * * *", async() => {
-    console.log("report gen started")
+export const generateReports = cron.schedule("11 3 * * *", async() => {
     try {
-        getPatientIds();
+        generatePatientReports();
     } catch (error) {
         console.error(error);
     }
 });
 
 
-export async function getPatientIds(): Promise<void> {
+export async function generatePatientReports(): Promise<void> {
     try {
-        console.log("generating now");
         const allPatientIds = await User.find({role: "patient"}, "_id");
         for(const entity of allPatientIds) {
             const patientId = entity._id as string;
-            console.log(patientId)
             const patientSummary = await generateSummary(patientId);
             if(!patientSummary) continue;
 
@@ -38,7 +35,6 @@ export async function getPatientIds(): Promise<void> {
 
             const savedSummary = await summary.save();
             if(!savedSummary) throw new Error("Error saving the report");
-            console.log(savedSummary);
         }
         
     } catch (error) {
@@ -50,13 +46,13 @@ export async function getPatientIds(): Promise<void> {
 export async function generateSummary(patientId: string): Promise<any> {
     try {
         let prompt = PATIENT_DAILY_SUMMARY_PROMPT;
+        const originalPrompt = PATIENT_DAILY_SUMMARY_PROMPT;
         const startDate = new Date();
         startDate.setHours(0, 0, 0, 0);
 
         const endDate = new Date();
         endDate.setHours(23, 59, 59, 999);
 
-        // Mood logs
         const moodLogsToday = await MoodEntry.find({ 
             patientId: patientId,
             createdAt: {
@@ -67,7 +63,6 @@ export async function generateSummary(patientId: string): Promise<any> {
         const moodLevels = moodLogsToday.map(log => log?.moodLevel);
         if (moodLevels.length > 0) prompt += "\n\nToday's patient mood logs: " + moodLevels.join(", ");
 
-        // Chat messages
         const chatEntries = await ChatBotLog.find({
             userId: patientId,
             createdAt: {
@@ -92,6 +87,9 @@ export async function generateSummary(patientId: string): Promise<any> {
             });
         }
 
+        if (prompt === originalPrompt) {
+            return null;
+        }
         const report = await getAiResponse(prompt);
         return report;
     } catch (error) {

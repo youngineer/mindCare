@@ -7,12 +7,10 @@ import Patient from '../models/Patient.js';
 import Therapist from '../models/Therapist.js';
 import { ITherapistInfoDto, ITherapistRequest } from '../types/dto/therapistDto.js';
 import { Role } from '../types/common.js';
-import { IUser } from '../types/user.js';
 import { AuthenticatedRequest } from '../types/dto/authDto.js';
-import ChatBotLog from '../models/ChatBotLog.js';
-import { PATIENT_DAILY_SUMMARY_PROMPT } from '../utils/constants.js';
-import MoodEntry from '../models/MoodEntry.js';
-import { getAiResponse } from '../utils/aiResponse.js';
+import { generatePatientReports, generateSummary } from '../utils/cronScheduler.js';
+import DailySummaryReport from '../models/PatientAnalysis.js';
+import { IDailySummaryReportDto } from '../types/dailyPatientSummary.js';
 
 
 const patientController = express.Router();
@@ -209,33 +207,59 @@ patientController.get("/patient/therapist/:therapistId", userAuth, async(req: IT
 patientController.post("/patient/generateSummary", userAuth, async(req: AuthenticatedRequest, resp: Response) => {
     const user = req?.user;
     try {
-        const userId = user?._id;
+        const userId = user?._id as string;
         if(user?.role === "admin") {
             resp.status(401).json(createResponse("Unauthorized access", user?.role || null, null));
             return;
         }
 
-        const startDate = new Date();
-        startDate.setHours(0, 0, 0, 0);
-        const endDate = new Date();
-        endDate.setHours(23, 59, 59, 999);
-
-        const todaysMessagesWithID = await ChatBotLog.find({userId: user?._id}, "userMessage botResponse", {
-            $gte: startDate, $lte: endDate
+        const patientSummary = await generateSummary(userId);
+        const summary = new DailySummaryReport({
+            patientId: userId,
+            moodSnapshot: patientSummary?.moodSnapshot,
+            conversationSummary: patientSummary?.conversationSummary,
+            progressUpdate: patientSummary?.progressUpdate,
+            dailyRecommendations: patientSummary?.dailyRecommendations,
+            overallSummary: patientSummary?.overallSummary
         });
 
-        const todaysMoodWithId = await MoodEntry.find({patientId: user?._id}, "moodLevel", {
-            $gte: startDate, $lte: endDate
-        });
+        const savedSummary = await summary.save();
+        if(!savedSummary) throw new Error("Error saving the report");
 
-        const todaysUserMessages = todaysMessagesWithID.map(message => message.userMessage as string);
-        const todaysMoods = todaysMoodWithId.map(mood => mood.moodLevel);
-        const messageToAi = PATIENT_DAILY_SUMMARY_PROMPT + "\n\n Today's patient messages: " + todaysUserMessages + "\n\n Today's patient mood level: " + todaysMoods;
-        const aiResponse = await getAiResponse(messageToAi);
-
-        resp.status(201).json(createResponse("Summary generated successfully!", user?.role || null, aiResponse));
+        resp.status(201).json(createResponse("Summary generated successfully!", user?.role || null, null));
 
 
+    } catch (error: any) {
+        console.error('Therapist summary generation error:', error);
+        const response = createResponse(
+            error.message || "Failed to  generate therapist summary", 
+            user?.role || null, 
+            null
+        );
+        resp.status(500).json(response);
+    }
+});
+
+
+patientController.get("/patient/getReport", userAuth, async(req: AuthenticatedRequest, resp: Response) => {
+    const user = req?.user;
+    try {
+        // fetch last document generated
+        let summaryDto = null;
+        const summary = await DailySummaryReport.find({patientId: user!._id}).sort({_id: -1}).limit(1);
+        if (summary && summary.length > 0) {
+            const lastSummary = summary[0];
+            summaryDto = {
+                moodSnapshot: lastSummary.moodSnapshot,
+                conversationSummary: lastSummary.conversationSummary,
+                progressUpdate: lastSummary.progressUpdate,
+                dailyRecommendations: lastSummary.dailyRecommendations,
+                overallSummary: lastSummary.overallSummary,
+                createdAt: lastSummary.createdAt
+            };
+        }
+
+        resp.status(200).json(createResponse("Summary fetched successfully", user?.role || null, summaryDto));
     } catch (error: any) {
         console.error('Therapist summary generation error:', error);
         const response = createResponse(

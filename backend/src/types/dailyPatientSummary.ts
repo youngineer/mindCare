@@ -43,3 +43,12 @@ export interface IDailySummaryReport extends Document {
     createdAt?: Date;  
     updatedAt?: Date;
 }
+
+export interface IDailySummaryReportDto {
+    moodSnapshot: IMoodSnapshot;
+    conversationSummary: IConversationSummary;
+    progressUpdate: IProgressUpdate;
+    dailyRecommendations: IDailyRecommendations;
+    overallSummary: string;
+    createdAt?: Date;
+}
