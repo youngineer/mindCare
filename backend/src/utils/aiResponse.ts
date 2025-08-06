@@ -1,26 +1,28 @@
-export async function getAiChatResponse(prompt: string): Promise<any | null> {
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer " + process.env.OPENROUTER_API_KEY,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      "model": "google/gemma-3n-e4b-it:free",
-      messages: [
-        {
-          "role": "user",
-          "content": prompt
-        }
-      ]
-    })
-  });
-
-  // Await and parse the JSON content of the response
-  if (!response.ok) return null;
+export async function getAiResponse(prompt: string): Promise<any | null> {
   try {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + process.env.OPENROUTER_API_KEY,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        "model": "google/gemma-3n-e4b-it:free",
+        messages: [
+          {
+            "role": "user",
+            "content": prompt
+          }
+        ]
+      })
+    });
+
+    // Await and parse the JSON content of the response
+    if (!response.ok) return null;
     const jsonResponse = await response.json();
-    return jsonResponse;
+    const requiredJson = jsonResponse?.choices[0]?.message?.content;
+    console.log(getJsonFromAIResponse(requiredJson));
+    return getJsonFromAIResponse(requiredJson);
   } catch (e) {
     console.error("Failed to parse AI response as JSON:", e);
     return null;

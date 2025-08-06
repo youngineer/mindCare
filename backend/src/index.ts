@@ -10,6 +10,7 @@ import sessionController from "./routers/sessionController.js";
 import moodController from "./routers/moodController.js";
 import taskController from "./routers/taskController.js";
 import chatBotController from "./routers/chatBotController.js";
+import { generateReports, generateSummary } from "./utils/cronScheduler.js";
 
 dotenv.config();
 
@@ -26,7 +27,6 @@ app.use(
 );
 app.use(express.json()); // process json values from the frontend
 app.use(cookieParser()); // cookie-parser
-
 
 app.use("/", authRouter);
 app.use("/", patientController);
@@ -46,3 +46,5 @@ connectToDatabase()
         console.error(`Error while connecting to db: ${e}`);
         process.exit(1);
     });
+
+generateReports.start();

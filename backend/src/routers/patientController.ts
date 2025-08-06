@@ -12,7 +12,7 @@ import { AuthenticatedRequest } from '../types/dto/authDto.js';
 import ChatBotLog from '../models/ChatBotLog.js';
 import { PATIENT_DAILY_SUMMARY_PROMPT } from '../utils/constants.js';
 import MoodEntry from '../models/MoodEntry.js';
-import { getAiChatResponse } from '../utils/aiResponse.js';
+import { getAiResponse } from '../utils/aiResponse.js';
 
 
 const patientController = express.Router();
@@ -231,16 +231,9 @@ patientController.post("/patient/generateSummary", userAuth, async(req: Authenti
         const todaysUserMessages = todaysMessagesWithID.map(message => message.userMessage as string);
         const todaysMoods = todaysMoodWithId.map(mood => mood.moodLevel);
         const messageToAi = PATIENT_DAILY_SUMMARY_PROMPT + "\n\n Today's patient messages: " + todaysUserMessages + "\n\n Today's patient mood level: " + todaysMoods;
-        const aiResponse = await getAiChatResponse(messageToAi);
+        const aiResponse = await getAiResponse(messageToAi);
 
-        const summaryText = aiResponse?.choices[0]?.message?.content;
-        const start = summaryText.indexOf('{');
-        const end = summaryText.lastIndexOf('}') + 1;
-        const jsonText = summaryText.slice(start, end);
-
-        const summary = JSON.parse(jsonText);
-
-        resp.status(201).json(createResponse("Summary generated successfully!", user?.role || null, summary));
+        resp.status(201).json(createResponse("Summary generated successfully!", user?.role || null, aiResponse));
 
 
     } catch (error: any) {

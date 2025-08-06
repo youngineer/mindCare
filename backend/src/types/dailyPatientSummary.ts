@@ -35,10 +35,11 @@ interface IDailyRecommendations {
 
 export interface IDailySummaryReport extends Document {
     patientId: string;
-    reportDate: Date;
     moodSnapshot: IMoodSnapshot;
     conversationSummary: IConversationSummary;
     progressUpdate: IProgressUpdate;
     dailyRecommendations: IDailyRecommendations;
     overallSummary: string;
+    createdAt?: Date;  
+    updatedAt?: Date;
 }

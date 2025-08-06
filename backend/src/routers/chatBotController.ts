@@ -3,10 +3,8 @@ import { userAuth } from '../middlewares/auth.js';
 import { AuthenticatedRequest } from '../types/dto/authDto.js';
 import { createResponse } from '../utils/responseUtils.js';
 import { PATIENT_CHATBOT_PROMPT } from '../utils/constants.js';
-import { getAiChatResponse } from '../utils/aiResponse.js';
+import { getAiResponse } from '../utils/aiResponse.js';
 import ChatBotLog from '../models/ChatBotLog.js';
-import User from '../models/User.js';
-import { Role } from '../types/common.js';
 import MoodEntry from '../models/MoodEntry.js';
 
 const chatBotController = express.Router();
@@ -39,7 +37,7 @@ chatBotController.post("/chatBot/add", userAuth, async(req: AuthenticatedRequest
         const todaysMoods = todaysMoodWithId.map(mood => mood.moodLevel);
         const todaysBotResponses = todaysMessagesWithID.map(message => message.botResponse as string);
         const messageToAi = PATIENT_CHATBOT_PROMPT + "\n\n Patient message: " + message + "\n\n Today's patient messages: " + todaysMessages + "\n\n Today's patient mood level: " + todaysMoods+ "\n\n Today's previous AI responses: " + todaysBotResponses;
-        const aiJsonResponse = await getAiChatResponse(messageToAi);
+        const aiJsonResponse = await getAiResponse(messageToAi);
 
         if(!aiJsonResponse) throw new Error("Error fetching AI response.");
         const botMessage = aiJsonResponse?.choices[0]?.message?.content;

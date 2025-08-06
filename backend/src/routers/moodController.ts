@@ -22,8 +22,6 @@ moodController.post("/mood/add", userAuth, async(req: AuthenticatedRequest, resp
             return;
         }
 
-        console.log(moodEntryReq)
-
         const patientId = user?._id;
         const mood = new MoodEntry({
             patientId: patientId,
