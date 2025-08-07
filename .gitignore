@@ -1,8 +1,9 @@
 /MindCare_ AI-Enhanced Mental Health Management Platform.pdf
 /backend/node_modules
 /backend/.env
+/backend
 /.github
 /frontend/node_modules
 /frontend/README.md
 /frontend/.gitignore
-/frontend
+# /frontend
