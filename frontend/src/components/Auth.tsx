@@ -13,6 +13,7 @@ const Auth = () => {
         name: "dummy",
         emailId: "dummy@gmail.com",
         password: "Dummy@123",
+        confirmPassword: "Dummy@123",
         role: "therapist"
     });
 
@@ -47,23 +48,22 @@ const Auth = () => {
     }
 
     return (
-        <form className="flex items-center justify-center max-w-3xl" onSubmit={handleSubmit}>
-            <div className="hero bg-base-200 min-h-screen">
+        <form className="max-w-3xl" onSubmit={handleSubmit}>
+            <div className="hero bg-base-200 items-center">
                 <div className="hero-content flex-col lg:flex-row-reverse">
                     <div className="text-center lg:text-left">
-                        <h1 className="text-5xl font-bold">Login now!</h1>
+                        <h1 className="text-5xl font-bold">{isLogin ? "Login" : "Signup"}</h1>
                         <p className="py-6">
-                            Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda excepturi exercitationem
-                            quasi. In deleniti eaque aut repudiandae et a id nisi.
+                            Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda excepturi exercitationem quasi. In deleniti eaque aut repudiandae et a id nisi.
                         </p>
                     </div>
                     <div className="card bg-base-100 w-full max-w-sm shrink-0 shadow-2xl">
                         <div className="card-body">
-                            <fieldset className="fieldset">
+                            <div className="fieldset">
                                 {
                                     !isLogin && (
-                                        <fieldset className="fieldset">
-                                            <legend className="fieldset-legend" >Name</legend>
+                                        <div className="input-group">
+                                            <label htmlFor="name">Name</label>
                                             <input
                                                 type="text"
                                                 className="input"
@@ -72,28 +72,44 @@ const Auth = () => {
                                                 value={signupPayload.name}
                                                 onChange={handleInputChange}
                                             />
-                                        </fieldset>
+                                        </div>
                                     )
                                 }
-                                <label className="label">Email</label>
-                                <input type="email" className="input" placeholder="Email" value={isLogin ? loginPayload.emailId : signupPayload.emailId} />
-                                <label className="label">Password</label>
-                                <input type="password" className="input" placeholder="Password" value={isLogin ? loginPayload.password : signupPayload.password} />
+                                <div className="input-group">
+                                    <label htmlFor="email">Email</label>
+                                    <input
+                                        type="email"
+                                        className="input"
+                                        placeholder="Email"
+                                        value={isLogin ? loginPayload.emailId : signupPayload.emailId}
+                                        onChange={handleInputChange}
+                                    />
+                                </div>
+                                <div className="input-group">
+                                    <label htmlFor="password">Password</label>
+                                    <input
+                                        type="password"
+                                        className="input"
+                                        placeholder="Password"
+                                        value={isLogin ? loginPayload.password : signupPayload.password}
+                                        onChange={handleInputChange}
+                                    />
+                                </div>
                                 {
                                     !isLogin && (
                                         <div>
-                                            <fieldset className="fieldset">
-                                                <legend className="fieldset-legend">Confirm Password</legend>
+                                            <div className="input-group">
+                                                <label htmlFor="confirmPassword">Confirm Password</label>
                                                 <input
                                                     type="password"
                                                     className="input"
                                                     placeholder="Retype password"
                                                     name="confirmPassword"
-                                                    value={isLogin ? loginPayload.password : signupPayload.password}
+                                                    value={signupPayload.confirmPassword}
                                                     onChange={handleInputChange}
                                                 />
-                                            </fieldset>
-                                            <fieldset className="fieldset mt-4">
+                                            </div>
+                                            <div className="input-group mt-4">
                                                 <select
                                                     className="select"
                                                     name="role"
@@ -105,85 +121,24 @@ const Auth = () => {
                                                     <option value="patient">Patient</option>
                                                     <option value="therapist">Therapist</option>
                                                 </select>
-                                            </fieldset>
+                                            </div>
                                         </div>
                                     )
                                 }
-                                <div><a className="link link-hover" onClick={() => setIsLogin(prev => !prev)}>{isLogin ? "New user? Signup" : "Already registered? Login"}</a></div>
+                                <div>
+                                    <a
+                                        className="link link-hover"
+                                        onClick={() => setIsLogin(prev => !prev)}
+                                    >
+                                        {isLogin ? "New user? Signup" : "Already registered? Login"}
+                                    </a>
+                                </div>
                                 <button className="btn btn-neutral mt-4">{isLogin ? "Login" : "Signup"}</button>
-                            </fieldset>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            {/* <div className="card bg-base-100 w-96 shadow-lg">
-                <legend className="fieldset-legend">{isLogin ? "Login" : "Sign Up"}</legend>
-                <div className="card-body items-center text-center">
-                    {
-                        !isLogin && (
-                            <fieldset className="fieldset">
-                                <legend className="fieldset-legend" >Name</legend>
-                                <input
-                                    type="text"
-                                    className="input"
-                                    placeholder="Your name"
-                                    name="name"
-                                    value={signupPayload.name}
-                                    onChange={handleInputChange}
-                                />
-                            </fieldset>
-                        )
-                    }
-                    <fieldset className="fieldset">
-                        <legend className="fieldset-legend" >Email</legend>
-                        <input className="input validator" type="email" onChange={handleInputChange} required placeholder="mail@site.com" value={isLogin ? loginPayload.emailId : signupPayload.emailId}/>
-                    </fieldset>
-                    <fieldset className="fieldset">
-                        <legend className="fieldset-legend">Password</legend>
-                        <input type="password" className="input validator" onChange={handleInputChange} required placeholder="Password"  value={isLogin ? loginPayload.password : signupPayload.password}/>
-                    </fieldset>
-                    {
-                        !isLogin && (
-                            <div>
-                                <fieldset className="fieldset">
-                                    <legend className="fieldset-legend">Confirm Password</legend>
-                                    <input
-                                        type="password"
-                                        className="input"
-                                        placeholder="Retype password"
-                                        name="confirmPassword"
-                                        value={isLogin ? loginPayload.password : signupPayload.password}
-                                        onChange={handleInputChange}
-                                    />
-                                </fieldset>
-                                <fieldset className="fieldset mt-4">
-                                    <select
-                                        className="select"
-                                        name="role"
-                                        value={signupPayload.role || ""}
-                                        onChange={handleInputChange}
-                                    >
-                                        <option value="" disabled>Pick your role</option>
-                                        <option value="admin">Admin</option>
-                                        <option value="patient">Patient</option>
-                                        <option value="therapist">Therapist</option>
-                                    </select>
-                                </fieldset>
-                            </div>
-                        )
-                    }
-                    <div className="card-actions">
-                        <p
-                            className='cursor-pointer hover:underline-offset-2'
-                            onClick={() => setIsLogin(prev => !prev)}
-                        >
-                            {!isLogin ? "Already registered? Login" : "New here? Sign Up"}
-                        </p>
-                        
-                    </div>
-                    <button className="btn btn-primary" type="submit">Submit</button>
-                </div>
-            </div> */}
         </form>
     )
 }

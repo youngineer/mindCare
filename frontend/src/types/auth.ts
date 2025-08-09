@@ -7,5 +7,6 @@ export interface ILoginRequest {
 
 export interface ISignupRequest extends ILoginRequest{
     name?: string;
-    role?: Role
+    role?: Role;
+    confirmPassword: string;
 }
