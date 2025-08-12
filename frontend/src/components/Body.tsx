@@ -4,7 +4,7 @@ import { Outlet } from 'react-router'
 
 const Body = () => {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col">
       <Navbar />
       <main className="flex justify-center py-6">
         <Outlet />
