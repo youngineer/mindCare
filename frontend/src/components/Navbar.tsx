@@ -10,8 +10,8 @@ const Navbar = () => {
   return (
     <div>
         <div className="navbar bg-base-100 shadow-sm bg-neutral text-neutral-content">
-            <div className="flex-1">
-                <a className="btn btn-ghost text-xl">mindCare</a>
+            <div className="flex-1 text-xl ml-4">
+                mindCare
             </div>
             <div className="flex gap-2">
                 <div className="dropdown dropdown-end">
