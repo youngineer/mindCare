@@ -1,13 +1,15 @@
 import React, { useState, type ChangeEvent, type FormEvent } from 'react'
 import type { ILoginRequest, ISignupRequest } from '../types/auth';
 import { login, signup } from '../services/authServices';
+import { useNavigate } from 'react-router';
 
 const Auth = () => {
     const [isLogin, setIsLogin] = useState<boolean>(true);
     const [loginPayload, setLoginPayload] = useState<ILoginRequest>({
-        emailId: "mail@site.com",
-        password: "khbaef982w3@"
+        emailId: "patient@gmail.com",
+        password: "Patient@123"
     });
+    const navigate = useNavigate();
 
     const [signupPayload, setSignupPayload] = useState<ISignupRequest>({
         name: "dummy",
@@ -36,11 +38,13 @@ const Auth = () => {
         e.preventDefault();
         try {
             if (isLogin) {
-                // login(loginPayload);
-                console.log(loginPayload)
+                await login(loginPayload)
+                .then(() => navigate('/dashboard'))
+                .catch((err) => err);;
             } else {
-                // signup(signupPayload);
-                console.log(signupPayload)
+                await signup(signupPayload)
+                .then(() => navigate('/dashboard'))
+                .catch((err) => err);
             }
         } catch (error) {
 
